@@ -1,0 +1,2 @@
+{"timestamp":"2026-05-11T00:59:00.000Z","type":"turn_context","payload":{"model":"gpt-5.5"}}
+{"timestamp":"2026-05-11T01:00:00.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":1000000,"cached_input_tokens":900000,"output_tokens":1000,"reasoning_output_tokens":100,"total_tokens":1001000},"last_token_usage":{"input_tokens":1200,"cached_input_tokens":800,"output_tokens":100,"reasoning_output_tokens":20,"total_tokens":1300}}}}

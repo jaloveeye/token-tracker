@@ -1,0 +1,29 @@
+{
+  "currency": "credits",
+  "unit": "per_1m_tokens",
+  "usdPerCredit": 0.04,
+  "label": "OpenAI Codex credits. GPT-5.5 기준 단가: input 125, cached input 12.5, output 750 credits / 1M tokens",
+  "models": [
+    {
+      "match": "^gpt-5\\.5$",
+      "input": 125,
+      "cacheRead": 12.5,
+      "output": 750,
+      "reasoning": 750
+    },
+    {
+      "match": "^gpt-5\\.4$",
+      "input": 62.5,
+      "cacheRead": 6.25,
+      "output": 375,
+      "reasoning": 375
+    },
+    {
+      "match": "^gpt-5\\.3-codex$",
+      "input": 43.75,
+      "cacheRead": 4.375,
+      "output": 350,
+      "reasoning": 350
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+{"timestamp":"2026-05-01T08:00:00.000Z","client":"codex","provider":"openai","model":"gpt-4o","usage":{"input_tokens":1000,"output_tokens":500,"cached_input_tokens":200,"reasoning_tokens":50}}
+{"timestamp":"2026-05-02T08:00:00.000Z","client":"codex","provider":"openai","model":"gpt-4o","usage":{"prompt_tokens":2000,"completion_tokens":700}}

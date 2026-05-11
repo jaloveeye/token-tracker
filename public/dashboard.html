@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Token Tracker</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fb;
+        --panel: #ffffff;
+        --line: #dce1ea;
+        --text: #172033;
+        --muted: #667085;
+        --green: #23845b;
+        --blue: #2864c8;
+        --amber: #9d5c00;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: 0;
+      }
+      .muted { color: var(--muted); }
+      .status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        margin-top: 8px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .metric, .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .metric { padding: 16px; }
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+      .metric strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 24px;
+      }
+      .section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+      .panel { padding: 16px; overflow: hidden; }
+      h2 { margin: 0 0 12px; font-size: 16px; }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .filter-button {
+        min-height: 32px;
+        padding: 0 11px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #ffffff;
+        color: var(--text);
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .filter-button[aria-pressed="true"] {
+        background: #172033;
+        border-color: #172033;
+        color: #ffffff;
+      }
+      .filter-fields {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .filter-fields label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .filter-fields input {
+        min-height: 32px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 0 9px;
+        background: #ffffff;
+        color: var(--text);
+        font: inherit;
+        font-size: 13px;
+      }
+      .filter-note {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th, td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 8px;
+        text-align: right;
+        white-space: nowrap;
+      }
+      th:first-child, td:first-child { text-align: left; white-space: normal; }
+      th { color: var(--muted); font-weight: 600; }
+      .bars {
+        display: grid;
+        gap: 8px;
+      }
+      .bar {
+        display: grid;
+        grid-template-columns: 110px 1fr 110px;
+        gap: 10px;
+        align-items: center;
+        font-size: 13px;
+      }
+      .bar-track {
+        height: 10px;
+        border-radius: 999px;
+        background: #eef1f6;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        background: var(--blue);
+      }
+      .daily-wrap {
+        overflow-x: auto;
+      }
+      .daily-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .daily-summary-item {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px;
+        background: #fafbfe;
+      }
+      .daily-summary-item span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .daily-summary-item strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 16px;
+      }
+      .github-heatmap {
+        min-width: max-content;
+      }
+      .month-labels {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 15px;
+        gap: 3px;
+        margin-left: 34px;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .weekday-labels {
+        display: grid;
+        grid-template-rows: repeat(7, 15px);
+        gap: 3px;
+        width: 28px;
+        margin-right: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 15px;
+      }
+      .heat-body {
+        display: flex;
+      }
+      .heat-cells {
+        display: grid;
+        grid-template-rows: repeat(7, 15px);
+        grid-auto-flow: column;
+        grid-auto-columns: 15px;
+        gap: 3px;
+      }
+      .heat-cell {
+        width: 15px;
+        height: 15px;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        background: #eef1f6;
+        cursor: default;
+      }
+      .heat-cell[data-level="1"] { background: #aceebb; border-color: #8ddc9e; }
+      .heat-cell[data-level="2"] { background: #4ac26b; border-color: #37a756; }
+      .heat-cell[data-level="3"] { background: #2da44e; border-color: #238636; }
+      .heat-cell[data-level="4"] { background: #116329; border-color: #116329; }
+      .heat-cell:focus-visible {
+        outline: 3px solid #91b7ff;
+        outline-offset: 2px;
+      }
+      .heat-legend {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 6px;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .legend-cell {
+        width: 12px;
+        height: 12px;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        background: #eef1f6;
+      }
+      .legend-cell[data-level="1"] { background: #aceebb; border-color: #8ddc9e; }
+      .legend-cell[data-level="2"] { background: #4ac26b; border-color: #37a756; }
+      .legend-cell[data-level="3"] { background: #2da44e; border-color: #238636; }
+      .legend-cell[data-level="4"] { background: #116329; border-color: #116329; }
+      .tooltip {
+        position: fixed;
+        z-index: 20;
+        max-width: 240px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #111827;
+        color: white;
+        box-shadow: 0 12px 28px rgba(16, 24, 40, 0.24);
+        pointer-events: none;
+        font-size: 12px;
+        line-height: 1.45;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 120ms ease, transform 120ms ease;
+      }
+      .tooltip[data-visible="true"] {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .tooltip strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+      .tooltip-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+      }
+      @media (max-width: 860px) {
+        .grid, .section { grid-template-columns: 1fr; }
+        .wrap { padding: 18px; }
+        .bar { grid-template-columns: 90px 1fr; }
+        .bar-value { display: none; }
+        .filter-note { width: 100%; margin-left: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <h1>Token Tracker</h1>
+        <div class="status muted">
+          <span id="generated"></span>
+          <span id="live-status"></span>
+          <span id="pricing-note"></span>
+        </div>
+      </div>
+    </header>
+    <main class="wrap">
+      <section class="filters" aria-label="Statistics filters">
+        <div class="filter-buttons">
+          <button class="filter-button" type="button" data-filter="all" aria-pressed="true">전체</button>
+          <button class="filter-button" type="button" data-filter="month30" aria-pressed="false">최근 한달</button>
+          <button class="filter-button" type="button" data-filter="week" aria-pressed="false">최근 일주</button>
+          <button class="filter-button" type="button" data-filter="today" aria-pressed="false">오늘</button>
+          <button class="filter-button" type="button" data-filter="year" aria-pressed="false">년 기준</button>
+          <button class="filter-button" type="button" data-filter="month" aria-pressed="false">월 기준</button>
+        </div>
+        <div class="filter-fields">
+          <label>연도 <input id="year-filter" type="number" min="2000" max="2100" step="1"></label>
+          <label>월 <input id="month-filter" type="month"></label>
+        </div>
+        <div class="filter-note" id="filter-note"></div>
+      </section>
+      <section class="grid" id="metrics"></section>
+      <section class="section">
+        <div class="panel">
+          <h2>Clients</h2>
+          <div class="bars" id="clients"></div>
+        </div>
+        <div class="panel">
+          <h2>Models</h2>
+          <table>
+            <thead><tr><th>Model</th><th>Events</th><th>Tokens</th><th>Cost</th></tr></thead>
+            <tbody id="models"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel" style="margin-top:16px">
+        <h2>Daily Usage</h2>
+        <div class="daily-summary" id="daily-summary"></div>
+        <div class="daily-wrap">
+          <div class="github-heatmap" id="daily-heatmap"></div>
+        </div>
+      </section>
+    </main>
+    <div class="tooltip" id="tooltip" role="tooltip"></div>
+    <script>
+      /*__TOKEN_TRACKER_DATA__*/
+
+      const fmt = new Intl.NumberFormat("en-US");
+      const refreshMs = Number(window.TOKEN_TRACKER_REFRESH_MS || 10000);
+      const currentKstDate = todayKey();
+      const filterState = loadFilterState() || {
+        mode: "all",
+        year: Number(currentKstDate.slice(0, 4)),
+        month: currentKstDate.slice(0, 7)
+      };
+      let sourceReport = window.TOKEN_TRACKER_DATA || emptyReport();
+
+      setupFilters();
+      render(sourceReport);
+      if (window.TOKEN_TRACKER_LIVE) {
+        document.querySelector("#live-status").textContent = `Live, refresh ${Math.round(refreshMs / 1000)}s`;
+        window.setInterval(refreshReport, refreshMs);
+      }
+
+      function render(data) {
+        sourceReport = data || emptyReport();
+        const report = filterReport(sourceReport);
+        document.querySelector("#generated").textContent = `Generated ${formatKstDateTime(sourceReport.generatedAt)} KST`;
+        document.querySelector("#pricing-note").textContent = sourceReport.pricing?.label || "";
+        document.querySelector("#filter-note").textContent = `${report.range.label} · Today ${currentKstDate} KST`;
+        const costLabel = sourceReport.pricing?.currency === "credits" ? "Estimated credits" : "Estimated cost";
+        document.querySelector("#metrics").innerHTML = [
+          ["Events", fmt.format(report.totals.events || 0)],
+          ["Total tokens", fmt.format(report.totals.totalTokens || 0)],
+          ["Input / Output", `${fmt.format(report.totals.inputTokens || 0)} / ${fmt.format(report.totals.outputTokens || 0)}`],
+          [costLabel, formatCost(report.totals.costUsd || 0)]
+        ].map(([label, value]) => `<div class="metric"><span>${label}</span><strong>${value}</strong></div>`).join("");
+
+        const maxClient = Math.max(1, ...report.byClient.map((row) => row.totalTokens));
+        document.querySelector("#clients").innerHTML = report.byClient.slice(0, 12).map((row) => `
+          <div class="bar">
+            <div title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.max(3, row.totalTokens / maxClient * 100)}%"></div></div>
+            <div class="bar-value">${fmt.format(row.totalTokens)}</div>
+          </div>
+        `).join("") || `<div class="muted">No usage records found</div>`;
+
+        document.querySelector("#models").innerHTML = report.byModel.slice(0, 15).map((row) => `
+          <tr>
+            <td>${escapeHtml(row.name)}</td>
+            <td>${fmt.format(row.events)}</td>
+            <td>${fmt.format(row.totalTokens)}</td>
+            <td>${formatCost(row.costUsd)}</td>
+          </tr>
+        `).join("") || `<tr><td colspan="4" class="muted">No usage records found</td></tr>`;
+
+        renderDaily(report.byDay, report.range);
+      }
+
+      function setupFilters() {
+        document.querySelector("#year-filter").value = filterState.year;
+        document.querySelector("#month-filter").value = filterState.month;
+        document.querySelectorAll("[data-filter]").forEach((button) => {
+          button.addEventListener("click", () => {
+            filterState.mode = button.dataset.filter;
+            updateFilterButtons();
+            saveFilterState();
+            render(sourceReport);
+          });
+        });
+        document.querySelector("#year-filter").addEventListener("change", (event) => {
+          filterState.year = Number(event.target.value || new Date().getFullYear());
+          filterState.mode = "year";
+          updateFilterButtons();
+          saveFilterState();
+          render(sourceReport);
+        });
+        document.querySelector("#month-filter").addEventListener("change", (event) => {
+          filterState.month = event.target.value || todayKey().slice(0, 7);
+          filterState.mode = "month";
+          updateFilterButtons();
+          saveFilterState();
+          render(sourceReport);
+        });
+        updateFilterButtons();
+      }
+
+      function updateFilterButtons() {
+        document.querySelectorAll("[data-filter]").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.filter === filterState.mode));
+        });
+      }
+
+      function saveFilterState() {
+        try {
+          window.localStorage.setItem("token-tracker-filter", JSON.stringify(filterState));
+        } catch {
+          // localStorage can be unavailable in restricted browser modes.
+        }
+      }
+
+      function loadFilterState() {
+        try {
+          const parsed = JSON.parse(window.localStorage.getItem("token-tracker-filter") || "null");
+          if (!parsed || typeof parsed !== "object") return null;
+          return {
+            mode: ["all", "month30", "week", "today", "year", "month"].includes(parsed.mode) ? parsed.mode : "all",
+            year: Number(parsed.year || currentKstDate.slice(0, 4)),
+            month: typeof parsed.month === "string" && parsed.month ? parsed.month : currentKstDate.slice(0, 7)
+          };
+        } catch {
+          return null;
+        }
+      }
+
+      function filterReport(report) {
+        const range = selectedRange();
+        const events = (report.events || []).filter((event) => {
+          if (!event.date || event.date === "unknown") return range.mode === "all";
+          if (!range.start || !range.end) return true;
+          return event.date >= range.start && event.date <= range.end;
+        });
+
+        return {
+          generatedAt: report.generatedAt,
+          filters: report.filters || {},
+          pricing: report.pricing || {},
+          range,
+          totals: aggregateTotals(events),
+          byClient: aggregateBy(events, "client"),
+          byModel: aggregateBy(events, "model"),
+          byDay: aggregateByDay(events),
+          events
+        };
+      }
+
+      function selectedRange() {
+        const today = todayKey();
+        if (filterState.mode === "today") {
+          return { mode: "today", start: today, end: today, label: `오늘 · ${today}` };
+        }
+        if (filterState.mode === "week") {
+          return { mode: "week", start: addDaysKey(today, -6), end: today, label: `최근 일주 · ${addDaysKey(today, -6)} to ${today}` };
+        }
+        if (filterState.mode === "month30") {
+          return { mode: "month30", start: addDaysKey(today, -29), end: today, label: `최근 한달 · ${addDaysKey(today, -29)} to ${today}` };
+        }
+        if (filterState.mode === "year") {
+          const year = String(filterState.year || new Date().getFullYear());
+          return { mode: "year", start: `${year}-01-01`, end: `${year}-12-31`, label: `${year}년` };
+        }
+        if (filterState.mode === "month") {
+          const month = filterState.month || today.slice(0, 7);
+          return { mode: "month", start: `${month}-01`, end: lastDayOfMonth(month), label: `${month}` };
+        }
+        return { mode: "all", start: null, end: null, label: "전체 기간" };
+      }
+
+      function aggregateTotals(events) {
+        return events.reduce((totals, event) => addEvent(totals, event), emptyAggregate("total"));
+      }
+
+      function aggregateBy(events, key) {
+        const map = new Map();
+        for (const event of events) {
+          const name = event[key] || "unknown";
+          if (!map.has(name)) map.set(name, emptyAggregate(name));
+          addEvent(map.get(name), event);
+        }
+        return [...map.values()].sort((a, b) => b.totalTokens - a.totalTokens);
+      }
+
+      function aggregateByDay(events) {
+        const map = new Map();
+        for (const event of events) {
+          const name = event.date || "unknown";
+          if (!map.has(name)) map.set(name, emptyAggregate(name));
+          addEvent(map.get(name), event);
+        }
+        return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      function addEvent(target, event) {
+        target.events += 1;
+        target.inputTokens += event.inputTokens || 0;
+        target.outputTokens += event.outputTokens || 0;
+        target.cacheReadTokens += event.cacheReadTokens || 0;
+        target.cacheWriteTokens += event.cacheWriteTokens || 0;
+        target.reasoningTokens += event.reasoningTokens || 0;
+        target.totalTokens += event.totalTokens || 0;
+        target.costUsd += event.costUsd || 0;
+        return target;
+      }
+
+      function emptyAggregate(name) {
+        return {
+          name,
+          events: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          reasoningTokens: 0,
+          totalTokens: 0,
+          costUsd: 0
+        };
+      }
+
+      function renderDaily(days, range) {
+        const sortedDays = [...days].sort((a, b) => a.name.localeCompare(b.name));
+        const maxDay = Math.max(1, ...sortedDays.map((row) => row.totalTokens));
+        const activeDays = sortedDays.filter((row) => row.totalTokens > 0).length;
+        const peak = sortedDays.reduce((best, row) => row.totalTokens > best.totalTokens ? row : best, { name: "-", totalTokens: 0 });
+        const avg = activeDays ? Math.round(sortedDays.reduce((sum, row) => sum + row.totalTokens, 0) / activeDays) : 0;
+
+        document.querySelector("#daily-summary").innerHTML = [
+          ["Active days", fmt.format(activeDays)],
+          ["Peak day", peak.name === "-" ? "-" : `${peak.name.slice(5)} · ${compact(peak.totalTokens)}`],
+          ["Avg / active day", fmt.format(avg)]
+        ].map(([label, value]) => `<div class="daily-summary-item"><span>${label}</span><strong>${value}</strong></div>`).join("");
+
+        if (sortedDays.length === 0 && (!range?.start || !range?.end)) {
+          document.querySelector("#daily-heatmap").innerHTML = `<div class="muted">No dated records found</div>`;
+          return;
+        }
+
+        const heatmapDays = buildHeatmapDays(sortedDays, range);
+        const monthLabels = buildMonthLabels(heatmapDays);
+        document.querySelector("#daily-heatmap").innerHTML = `
+          <div class="month-labels">${monthLabels.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}</div>
+          <div class="heat-body">
+            <div class="weekday-labels">
+              <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+            </div>
+            <div class="heat-cells">
+              ${heatmapDays.map((row) => {
+            const ratio = row.totalTokens / maxDay;
+            const level = ratio === 0 ? 0 : ratio < 0.25 ? 1 : ratio < 0.5 ? 2 : ratio < 0.8 ? 3 : 4;
+            const tooltip = [
+              ["Date", row.name],
+              ["Tokens", fmt.format(row.totalTokens)],
+              ["Events", fmt.format(row.events)],
+              ["Input", fmt.format(row.inputTokens || 0)],
+              ["Output", fmt.format(row.outputTokens || 0)],
+              ["Cache", fmt.format((row.cacheReadTokens || 0) + (row.cacheWriteTokens || 0))],
+              ["Reasoning", fmt.format(row.reasoningTokens || 0)],
+              ["Cost", formatCost(row.costUsd || 0)]
+            ];
+            return `
+                <div class="heat-cell" tabindex="0" data-level="${level}" aria-label="${escapeHtml(row.name)} ${fmt.format(row.totalTokens)} tokens" data-tooltip="${escapeHtml(JSON.stringify(tooltip))}"></div>
+            `;
+          }).join("")}
+            </div>
+          </div>
+          <div class="heat-legend">
+            <span>Less</span>
+            <span class="legend-cell" data-level="0"></span>
+            <span class="legend-cell" data-level="1"></span>
+            <span class="legend-cell" data-level="2"></span>
+            <span class="legend-cell" data-level="3"></span>
+            <span class="legend-cell" data-level="4"></span>
+            <span>More</span>
+          </div>
+        `;
+        bindTooltips();
+      }
+
+      function buildHeatmapDays(sortedDays, range) {
+        const byDate = new Map(sortedDays.map((row) => [row.name, row]));
+        const firstKey = sortedDays[0]?.name || range?.start;
+        const lastKey = sortedDays[sortedDays.length - 1]?.name || range?.end;
+        const first = parseDateKey(firstKey);
+        const last = parseDateKey(lastKey);
+        const start = addDays(first, -first.getUTCDay());
+        const end = addDays(last, 6 - last.getUTCDay());
+        const result = [];
+
+        for (let cursor = start; cursor <= end; cursor = addDays(cursor, 1)) {
+          const key = dateKey(cursor);
+          result.push(byDate.get(key) || emptyDay(key));
+        }
+
+        return result;
+      }
+
+      function buildMonthLabels(heatmapDays) {
+        const weeks = [];
+        for (let index = 0; index < heatmapDays.length; index += 7) {
+          const week = heatmapDays.slice(index, index + 7);
+          const firstOfMonth = week.find((day) => day.name.endsWith("-01"));
+          if (firstOfMonth) {
+            weeks.push(monthName(firstOfMonth.name));
+            continue;
+          }
+          if (index === 0) {
+            weeks.push(monthName(week[0].name));
+            continue;
+          }
+          weeks.push("");
+        }
+        return weeks;
+      }
+
+      function bindTooltips() {
+        const tooltip = document.querySelector("#tooltip");
+        document.querySelectorAll(".heat-cell").forEach((cell) => {
+          cell.addEventListener("mouseenter", () => showTooltip(cell));
+          cell.addEventListener("mousemove", (event) => moveTooltip(event));
+          cell.addEventListener("mouseleave", hideTooltip);
+          cell.addEventListener("focus", () => showTooltip(cell));
+          cell.addEventListener("blur", hideTooltip);
+        });
+
+        function showTooltip(cell) {
+          const rows = JSON.parse(cell.dataset.tooltip || "[]");
+          tooltip.innerHTML = `<strong>${escapeHtml(rows[0]?.[1] || "")}</strong>` + rows.slice(1).map(([label, value]) => `
+            <div class="tooltip-row"><span>${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>
+          `).join("");
+          tooltip.dataset.visible = "true";
+          const rect = cell.getBoundingClientRect();
+          placeTooltip(rect.left + rect.width / 2, rect.top);
+        }
+
+        function moveTooltip(event) {
+          placeTooltip(event.clientX, event.clientY);
+        }
+
+        function hideTooltip() {
+          tooltip.dataset.visible = "false";
+        }
+
+        function placeTooltip(x, y) {
+          const padding = 14;
+          const rect = tooltip.getBoundingClientRect();
+          const left = Math.min(window.innerWidth - rect.width - padding, Math.max(padding, x + 12));
+          const top = Math.min(window.innerHeight - rect.height - padding, Math.max(padding, y + 12));
+          tooltip.style.left = `${left}px`;
+          tooltip.style.top = `${top}px`;
+        }
+      }
+
+      async function refreshReport() {
+        const status = document.querySelector("#live-status");
+        try {
+          const response = await fetch("/api/report", { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const next = await response.json();
+          render(next);
+          status.textContent = `Live, refreshed ${new Date().toLocaleTimeString("ko-KR", { timeZone: "Asia/Seoul" })} KST`;
+        } catch (error) {
+          status.textContent = `Live refresh failed: ${error.message}`;
+        }
+      }
+
+      function compact(value) {
+        if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+        if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+        return String(value || 0);
+      }
+
+      function formatCost(value) {
+        if (!value) return "-";
+        const currency = sourceReport.pricing?.currency || "credits";
+        const rounded = Math.round(value * 1000) / 1000;
+        if (currency.toLowerCase() === "usd") return `$${value.toFixed(4)}`;
+        if (currency.toLowerCase() === "credits") {
+          const usdPerCredit = Number(sourceReport.pricing?.usdPerCredit || 0.04);
+          return `${fmt.format(rounded)} credits (~$${(value * usdPerCredit).toFixed(2)})`;
+        }
+        return `${rounded} ${currency}`;
+      }
+
+      function todayKey() {
+        return formatDateKeyInKst(new Date());
+      }
+
+      function formatKstDateTime(value) {
+        return new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+      }
+
+      function formatDateKeyInKst(date) {
+        const parts = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Seoul",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).formatToParts(date);
+        const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        return `${values.year}-${values.month}-${values.day}`;
+      }
+
+      function addDaysKey(value, days) {
+        return dateKey(addDays(parseDateKey(value), days));
+      }
+
+      function lastDayOfMonth(value) {
+        const [year, month] = value.split("-").map(Number);
+        return dateKey(new Date(Date.UTC(year, month, 0)));
+      }
+
+      function emptyDay(name) {
+        return {
+          name,
+          events: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          reasoningTokens: 0,
+          totalTokens: 0,
+          costUsd: 0
+        };
+      }
+
+      function parseDateKey(value) {
+        const [year, month, day] = value.split("-").map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
+      }
+
+      function dateKey(date) {
+        return date.toISOString().slice(0, 10);
+      }
+
+      function addDays(date, days) {
+        const next = new Date(date);
+        next.setUTCDate(next.getUTCDate() + days);
+        return next;
+      }
+
+      function monthName(value) {
+        const date = parseDateKey(value);
+        return date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[char]));
+      }
+
+      function emptyReport() {
+        return {
+          generatedAt: new Date().toISOString(),
+          totals: {},
+          byClient: [],
+          byModel: [],
+          byDay: [],
+          events: []
+        };
+      }
+    </script>
+  </body>
+</html>
